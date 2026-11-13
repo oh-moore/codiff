@@ -55,7 +55,7 @@ const INCLUDED_WALKTHROUGH_HUNKS = 12;
 const TIMEOUT_MS_PER_EXTRA_FILE = 1_000;
 const TIMEOUT_MS_PER_EXTRA_HUNK = 2_000;
 const LARGE_WALKTHROUGH_HUNK_THRESHOLD = 100;
-const WALKTHROUGH_CACHE_KEY_VERSION = 1;
+const WALKTHROUGH_CACHE_KEY_VERSION = 2;
 
 /** @param {unknown} value @param {string} [fallback] */
 const cleanRich = (value, fallback = '') => {
@@ -481,6 +481,45 @@ const assertWalkthroughHunkIdsResolve = (input, files) => {
   }
 };
 
+const normalizeOverview = (overview) => {
+  if (!Array.isArray(overview?.calls) || !overview.calls.length || overview.calls.length > 32) {
+    return undefined;
+  }
+  const flow = typeof overview.flow === 'string' ? overview.flow.trim() : '';
+  const sequence = typeof overview.sequence === 'string' ? overview.sequence.trim() : '';
+  if (
+    !/^flowchart\s/.test(flow) ||
+    !/^sequenceDiagram\s/.test(sequence) ||
+    flow.length > 12000 ||
+    sequence.length > 12000
+  ) {
+    return undefined;
+  }
+  const ids = new Set();
+  const calls = [];
+  for (const raw of overview.calls) {
+    const id = oneLine(raw?.id);
+    const parent = oneLine(raw?.parent);
+    const file = oneLine(raw?.file);
+    const symbol = oneLine(raw?.symbol);
+    const explanation = cleanText(raw?.explanation);
+    if (!id || ids.has(id) || (parent && !ids.has(parent)) || !file || !symbol || !explanation) {
+      return undefined;
+    }
+    ids.add(id);
+    calls.push({
+      id,
+      file,
+      symbol,
+      explanation,
+      parent,
+      snippet: typeof raw.snippet === 'string' ? raw.snippet.trimEnd() : '',
+      stopId: oneLine(raw.stopId),
+    });
+  }
+  return { calls, flow, sequence };
+};
+
 const normalizeNarrativeWalkthrough = (input, files, facts = {}, hunkIdByAlias = new Map()) => {
   if (!input || typeof input !== 'object') {
     throw new Error('Narrative walkthrough is not an object.');
@@ -521,6 +560,9 @@ const normalizeNarrativeWalkthrough = (input, files, facts = {}, hunkIdByAlias =
     title: cleanText(input.title, 'Walkthrough'),
     version: 4,
   };
+
+  const overview = normalizeOverview(input.overview);
+  if (overview) result.overview = overview;
 
   result.meta = `${stopCount} stops · ${chapters.length} chapters`;
   if (facts.context && typeof facts.context === 'object') {
@@ -838,6 +880,7 @@ const buildWalkthroughSizingGuidance = (state) => {
           ? 'Use at most 3 story chapters'
           : `Use 2-${MAX_WALKTHROUGH_CHAPTERS} story chapters`;
   return `Coverage contract:
+- For behavioral changes include overview with three views of the same verified path. In calls, start at the highest evidenced entry point and follow execution. Give each node an id, repository-relative file, qualified Class.method or function symbol, and explanation of what changed or why the caller matters. Use parent to reference an earlier caller, snippet for a short exact source excerpt, and stopId to jump to the matching chapter stop. Label signals, callbacks, queues and network boundaries explicitly. In flow provide raw Mermaid flowchart source showing components and their relationships. In sequence provide raw Mermaid sequenceDiagram source showing messages in time order, including asynchronous and concurrent work where evidenced. Name the actual tasks and services. Use only relationships supported by available source or context. Omit overview when the evidence cannot support all three views.
 - The digest has ${fileCount} files and ${hunkCount} reviewable hunks. Put the highest-leverage review path in chapters[]; Codiff preserves everything else as support.
 - Digest hunk ids are compact request-local aliases like h1 and h2. Return those aliases exactly; Codiff maps them back to stable live-diff ids.
 - Every patch hunk contains its own bounded patch excerpt. Use that excerpt to associate each alias with its exact change; an excerpt ending in … is truncated.

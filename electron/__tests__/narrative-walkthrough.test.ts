@@ -1495,3 +1495,17 @@ test('strips the commit composer when the source is not a working tree', () => {
 
   expect(result.commit).toBeUndefined();
 });
+
+test('preserves multiline overview diagrams and discards invalid call trees without losing stops', () => {
+  const call = { id: 'start', file: 'src/App.tsx', symbol: 'App', explanation: 'Starts review.' };
+  const overview = {
+    calls: [call],
+    flow: 'flowchart TD\nA-->B',
+    sequence: 'sequenceDiagram\nA->>B: Start',
+  };
+  const normalize = (calls: Array<typeof call & { parent?: string }>) =>
+    normalizeNarrativeWalkthrough({ ...baseInput(), overview: { ...overview, calls } }, files);
+  expect(normalize([call]).overview).toMatchObject(overview);
+  expect(normalize([{ ...call, parent: 'start' }]).overview).toBeUndefined();
+  expect(normalize([]).chapters).toHaveLength(baseInput().chapters.length);
+});

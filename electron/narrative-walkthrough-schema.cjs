@@ -91,6 +91,34 @@ const narrativeWalkthroughSchema = {
       maxItems: MAX_WALKTHROUGH_CHAPTERS,
       type: 'array',
     },
+    overview: {
+      additionalProperties: false,
+      properties: {
+        calls: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 32,
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              id: { type: 'string' },
+              parent: { type: 'string' },
+              file: { type: 'string' },
+              symbol: { type: 'string' },
+              explanation: { type: 'string' },
+              snippet: { type: 'string' },
+              stopId: { type: 'string' },
+            },
+            required: ['id', 'file', 'symbol', 'explanation'],
+          },
+        },
+        flow: { type: 'string' },
+        sequence: { type: 'string' },
+      },
+      required: ['calls', 'flow', 'sequence'],
+      type: 'object',
+    },
     focus: { type: 'string' },
     kind: { const: 'narrative', type: 'string' },
     support: {
@@ -143,6 +171,7 @@ const narrativeWalkthroughGenerationSchema = {
         },
       },
     },
+    overview: narrativeWalkthroughSchema.properties.overview,
     focus: narrativeWalkthroughSchema.properties.focus,
     kind: narrativeWalkthroughSchema.properties.kind,
     title: narrativeWalkthroughSchema.properties.title,

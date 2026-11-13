@@ -51,6 +51,12 @@ choose.
 - **`commit?`** — for working-tree walkthroughs, include `title` and `body` when there is enough
   signal for a useful commit message. Omit it for commits, branches, and pull requests.
 
+## System overview
+
+For behavioral changes include overview with three views of the same verified path. In calls, start at the highest evidenced entry point and follow execution. Give each node an id, repository-relative file, qualified Class.method or function symbol, and explanation of what changed or why the caller matters. Use parent to reference an earlier caller, snippet for a short exact source excerpt, and stopId to jump to the matching chapter stop. Label signals, callbacks, queues and network boundaries explicitly. In flow provide raw Mermaid flowchart source showing components and their relationships. In sequence provide raw Mermaid sequenceDiagram source showing messages in time order, including asynchronous and concurrent work where evidenced. Name the actual tasks and services. Use only relationships supported by available source or context. Omit overview when the evidence cannot support all three views.
+
+Read surrounding callers and callees in the repository when authoring locally. Include unchanged entry points when they explain how the change is reached.
+
 ## Rules
 
 - Do not provide `added`, `deleted`, `path`, `oldPath`, `status`, `anchor`, `repo`, `source`,

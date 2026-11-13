@@ -37,6 +37,7 @@ import {
   type CommitOutputSubscriber,
 } from './CommitView.tsx';
 import { ChapterIcon, ImportancePill, Narration } from './parts.tsx';
+import { SystemOverview } from './SystemOverview.tsx';
 import type { NarrativeNavigation } from './useNarrativeNavigation.ts';
 
 type FocusedRunDiff = {
@@ -567,8 +568,31 @@ export function NarrativeWalkthroughView({
     [supportBlocks],
   );
   const reviewBlocks = useMemo(
-    () => [...walkthroughBlocks.blocks, ...supportBlocks],
-    [supportBlocks, walkthroughBlocks.blocks],
+    () => [
+      ...(walkthrough.overview && walkthroughView
+        ? [
+            {
+              header: (
+                <SystemOverview
+                  openStop={navigation.goStop}
+                  overview={walkthrough.overview}
+                  stopIds={walkthroughView.sequence.map((stop) => stop.id)}
+                />
+              ),
+              id: 'walkthrough:system-overview',
+            },
+          ]
+        : []),
+      ...walkthroughBlocks.blocks,
+      ...supportBlocks,
+    ],
+    [
+      navigation.goStop,
+      supportBlocks,
+      walkthrough.overview,
+      walkthroughBlocks.blocks,
+      walkthroughView,
+    ],
   );
   const activeBlockId = walkthroughBlocks.firstBlockIdByStop[navigation.scrollTarget.index];
   const reviewBlockScrollTarget = getWalkthroughBlockScrollTarget({

@@ -598,6 +598,22 @@ export type WalkthroughCommit = {
   title?: string;
 };
 
+export type WalkthroughCall = {
+  explanation: string;
+  file: string;
+  id: string;
+  parent?: string;
+  snippet?: string;
+  stopId?: string;
+  symbol: string;
+};
+
+export type WalkthroughOverview = {
+  calls: ReadonlyArray<WalkthroughCall>;
+  flow: string;
+  sequence: string;
+};
+
 export type NarrativeWalkthrough = {
   agent: 'codex' | 'claude' | 'opencode' | 'pi';
   chapters: ReadonlyArray<WalkthroughChapter>;
@@ -615,6 +631,7 @@ export type NarrativeWalkthrough = {
   kind: 'narrative';
   /** Display string, e.g. '6 stops · 4 chapters'. */
   meta?: string;
+  overview?: WalkthroughOverview;
   repo: {
     branch: string | null;
     root: string;

@@ -1319,3 +1319,35 @@
   color: #fff;
   font: inherit;
 }
+
+.wt-system-overview {
+  padding: 16px 24px;
+  white-space: normal;
+  font-family: var(--font-sans, system-ui);
+}
+.wt-system-overview ul {
+  margin: 6px 0;
+  padding-inline-start: 16px;
+  list-style: none;
+  border-inline-start: 1px solid currentColor;
+}
+.wt-system-overview ul:empty {
+  display: none;
+}
+.wt-system-overview summary {
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.wt-system-overview small {
+  opacity: 0.75;
+}
+.wt-system-overview button {
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.wt-system-overview button[aria-pressed='true'] {
+  text-decoration: underline;
+}
+.wt-system-overview pre {
+  overflow-x: auto;
+}
