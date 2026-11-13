@@ -185,6 +185,11 @@ export function NarrativeSidebar({
       <div className="wt-focus">
         <span className="wt-focus-label">Review focus</span>
         <p>{renderInlineMarkdown(walkthrough.focus)}</p>
+        {walkthrough.overview && (
+          <button className="wt-overview-link" onClick={navigation.openOverview} type="button">
+            System overview
+          </button>
+        )}
       </div>
 
       <div className="wt-toc-scroll">

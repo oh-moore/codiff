@@ -69,19 +69,21 @@ export const getWalkthroughBlockScrollTarget = ({
   firstSupportBlockId: string | null;
   scrollTarget: NarrativeNavigation['scrollTarget'];
 }): WalkthroughBlockScrollTarget | null =>
-  scrollTarget.kind === 'support' && firstSupportBlockId
-    ? {
-        behavior: 'smooth',
-        blockId: firstSupportBlockId,
-        request: scrollTarget.nonce,
-      }
-    : scrollTarget.kind === 'stop' && activeBlockId && scrollTarget.nonce > 0
+  scrollTarget.kind === 'overview'
+    ? { behavior: 'instant', blockId: 'walkthrough:system-overview', request: scrollTarget.nonce }
+    : scrollTarget.kind === 'support' && firstSupportBlockId
       ? {
           behavior: 'smooth',
-          blockId: activeBlockId,
+          blockId: firstSupportBlockId,
           request: scrollTarget.nonce,
         }
-      : null;
+      : scrollTarget.kind === 'stop' && activeBlockId && scrollTarget.nonce > 0
+        ? {
+            behavior: 'smooth',
+            blockId: activeBlockId,
+            request: scrollTarget.nonce,
+          }
+        : null;
 
 const getFocusedRunDiffs = (
   item: WalkthroughHunkGroup,

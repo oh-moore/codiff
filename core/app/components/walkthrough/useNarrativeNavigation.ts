@@ -37,7 +37,7 @@ export const useNarrativeNavigation = (
   // already-handled request as a new one.
   const [scrollTarget, setScrollTarget] = useState<{
     index: number;
-    kind: 'stop' | 'support';
+    kind: 'stop' | 'support' | 'overview';
     nonce: number;
   }>({
     index: 0,
@@ -217,6 +217,14 @@ export const useNarrativeNavigation = (
     pendingSupportScrollRef.current = null;
   }, []);
 
+  const openOverview = useCallback(() => {
+    pendingStopScrollRef.current = null;
+    pendingSupportScrollRef.current = null;
+    setMode('stop');
+    setIndex(0);
+    setScrollTarget((current) => ({ index: 0, kind: 'overview', nonce: current.nonce + 1 }));
+  }, []);
+
   const openSupport = useCallback(() => {
     leaveStopMode();
     if (walkthroughView?.sequence.length) {
@@ -286,6 +294,7 @@ export const useNarrativeNavigation = (
     goStop,
     index,
     mode,
+    openOverview,
     openSupport,
     releaseStopScrollLock,
     scrollTarget,
