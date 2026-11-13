@@ -574,9 +574,11 @@ export function NarrativeWalkthroughView({
             {
               header: (
                 <SystemOverview
+                  focus={walkthrough.focus}
                   openStop={navigation.goStop}
                   overview={walkthrough.overview}
                   stopIds={walkthroughView.sequence.map((stop) => stop.id)}
+                  title={walkthrough.title}
                 />
               ),
               id: 'walkthrough:system-overview',
@@ -590,6 +592,8 @@ export function NarrativeWalkthroughView({
       navigation.goStop,
       supportBlocks,
       walkthrough.overview,
+      walkthrough.title,
+      walkthrough.focus,
       walkthroughBlocks.blocks,
       walkthroughView,
     ],

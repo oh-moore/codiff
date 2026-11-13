@@ -1321,33 +1321,113 @@
 }
 
 .wt-system-overview {
-  padding: 16px 24px;
+  box-sizing: border-box;
+  width: min(100%, 1040px);
+  margin: 16px auto 32px;
+  padding: clamp(18px, 4%, 44px);
+  background: #faf9f5;
+  color: #202e28;
+  color-scheme: light;
+  border-radius: 12px;
+  font:
+    15px/1.5 system-ui,
+    sans-serif;
   white-space: normal;
-  font-family: var(--font-sans, system-ui);
+}
+.wt-system-overview header > small {
+  color: #52665a;
+}
+.wt-system-overview h2 {
+  font:
+    400 clamp(30px, 3.2vw, 48px)/1.12 Georgia,
+    serif;
+  margin: 4px 0 10px;
+}
+.wt-system-overview header p {
+  margin: 0 0 18px;
+  max-width: 72ch;
+}
+.wt-system-overview [role='group'] {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #b9cabe;
+}
+.wt-system-overview [role='group'] button {
+  cursor: pointer;
+  background: transparent;
+  color: #476050;
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  font: 600 14px/1.5 system-ui;
+}
+.wt-system-overview [role='group'] button[aria-pressed='true'] {
+  border-bottom-color: #24704e;
+  color: #164f39;
+}
+.wt-system-overview h3 {
+  font:
+    400 26px Georgia,
+    serif;
+  margin: 20px 0 12px;
 }
 .wt-system-overview ul {
-  margin: 6px 0;
-  padding-inline-start: 16px;
   list-style: none;
-  border-inline-start: 1px solid currentColor;
+  margin: 8px 0;
+  padding-left: clamp(4px, 1vw, 14px);
+  border-left: 2px solid #ccd8ce;
 }
 .wt-system-overview ul:empty {
   display: none;
 }
-.wt-system-overview summary {
-  cursor: pointer;
+.wt-system-overview li {
+  margin: 7px 0;
+}
+.wt-system-overview details,
+.wt-call-card {
+  background: white;
+  border: 1px solid #d4ddd4;
+  border-radius: 7px;
+  padding: 10px 14px;
   overflow-wrap: anywhere;
 }
-.wt-system-overview small {
-  opacity: 0.75;
-}
-.wt-system-overview button {
-  padding: 4px 8px;
+.wt-system-overview summary {
   cursor: pointer;
 }
-.wt-system-overview button[aria-pressed='true'] {
-  text-decoration: underline;
+.wt-system-overview summary::marker {
+  color: #567461;
+}
+.wt-system-overview li small {
+  color: #516458;
+  font: 12px/1.5 system-ui;
+}
+.wt-system-overview li code {
+  display: block;
+  font:
+    600 14px/1.5 ui-monospace,
+    monospace;
+  color: #18392a;
+}
+.wt-system-overview li span {
+  display: block;
+  margin-top: 3px;
 }
 .wt-system-overview pre {
-  overflow-x: auto;
+  background: #edf3ed;
+  border-radius: 4px;
+  overflow: auto;
+  padding: 12px;
+  color: #213a2b;
+}
+.wt-system-overview details button {
+  color: #16573c;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.wt-overview-diagram {
+  margin-top: 18px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--background, #fff);
+  color: var(--text);
 }
