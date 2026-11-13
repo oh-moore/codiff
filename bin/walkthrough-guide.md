@@ -63,7 +63,7 @@ Read surrounding callers and callees in the repository when authoring locally. I
   `generatedAt`, `agent`, or `meta`. Codiff computes those from the live diff.
 - Every changed hunk should appear at most once in either a stop or support. Codiff adds omitted
   live-diff hunks to support, but a clean document reads better.
-- Order stops by review leverage, not by file path.
+- When there is a call tree, use it as the reading order for chapters and stops. Start with the trigger and unchanged caller in prose, then show the first changed callee. At each stop name the caller, explain what changes at this point and why, and hand the reader to the next call. Follow each significant branch to its observable outcome, including retries or failures that change behavior. When returning to a fork, name that fork. Describe asynchronous branches as independent when their execution order can vary. Group adjacent calls covered by one diff hunk into one stop and link their call nodes to that stopId. Use related changed callers, task registrations, tests or configuration as anchors when they demonstrate a transition. Keep the core execution path in the walkthrough itself.
 - Similar same-file hunks should usually be one stop with multiple `hunkIds`, not separate
   chapters or stops. Split them only when the reviewer needs different prose for different ideas.
 - A Git hunk boundary is not a walkthrough boundary. Group hunks that only make sense together,
