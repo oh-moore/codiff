@@ -113,6 +113,21 @@ const narrativeWalkthroughSchema = {
             required: ['id', 'file', 'symbol', 'explanation'],
           },
         },
+        risks: {
+          type: 'array',
+          maxItems: 12,
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              evidence: { type: 'string' },
+              scenario: { type: 'string' },
+              verify: { type: 'string' },
+              stopId: { type: 'string' },
+            },
+            required: ['evidence', 'scenario', 'verify'],
+          },
+        },
         flow: { type: 'string' },
         sequence: { type: 'string' },
       },

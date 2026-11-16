@@ -493,7 +493,7 @@ for arg in "$@"; do
       if [ -n "$electron_path" ] && [ -f "$script_dir/codiff.js" ]; then
         ELECTRON_RUN_AS_NODE=1 "$electron_path" "$script_dir/codiff.js" --walkthrough-guide
       else
-        cat "$script_dir/walkthrough-guide.md"
+        cat "$script_dir/walkthrough-guide.md" "$script_dir/risk-review.md"
       fi
       exit 0
       ;;

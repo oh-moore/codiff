@@ -2,6 +2,10 @@
 
 // Narrative walkthrough generation and normalization trust boundary.
 
+const riskReview = require('node:fs').readFileSync(
+  require('node:path').join(__dirname, '../bin/risk-review.md'),
+  'utf8',
+);
 const { createHash } = require('node:crypto');
 const {
   cleanText,
@@ -55,7 +59,7 @@ const INCLUDED_WALKTHROUGH_HUNKS = 12;
 const TIMEOUT_MS_PER_EXTRA_FILE = 1_000;
 const TIMEOUT_MS_PER_EXTRA_HUNK = 2_000;
 const LARGE_WALKTHROUGH_HUNK_THRESHOLD = 100;
-const WALKTHROUGH_CACHE_KEY_VERSION = 3;
+const WALKTHROUGH_CACHE_KEY_VERSION = 4;
 
 /** @param {unknown} value @param {string} [fallback] */
 const cleanRich = (value, fallback = '') => {
@@ -517,7 +521,17 @@ const normalizeOverview = (overview) => {
       stopId: oneLine(raw.stopId),
     });
   }
-  return { calls, flow, sequence };
+  const risks = Array.isArray(overview.risks)
+    ? overview.risks.slice(0, 12).flatMap((raw) => {
+        const evidence = cleanText(raw?.evidence);
+        const scenario = cleanText(raw?.scenario);
+        const verify = cleanText(raw?.verify);
+        return evidence && scenario && verify
+          ? [{ evidence, scenario, verify, stopId: oneLine(raw.stopId) }]
+          : [];
+      })
+    : undefined;
+  return { calls, flow, sequence, risks };
 };
 
 const normalizeNarrativeWalkthrough = (input, files, facts = {}, hunkIdByAlias = new Map()) => {
@@ -879,7 +893,9 @@ const buildWalkthroughSizingGuidance = (state) => {
         : fileCount <= 8 && hunkCount <= 32
           ? 'Use at most 3 story chapters'
           : `Use 2-${MAX_WALKTHROUGH_CHAPTERS} story chapters`;
-  return `Coverage contract:
+  return `${riskReview}
+
+Coverage contract:
 - For behavioral changes include overview with three views of the same verified path. In calls, start at the highest evidenced entry point and follow execution. Give each node an id, repository-relative file, qualified Class.method or function symbol, and explanation of what changed or why the caller matters. Use parent to reference an earlier caller, snippet for a short exact source excerpt, and stopId to jump to the matching chapter stop. Label signals, callbacks, queues and network boundaries explicitly. In flow provide raw Mermaid flowchart source showing components and their relationships. In sequence provide raw Mermaid sequenceDiagram source showing messages in time order, including asynchronous and concurrent work where evidenced. Name the actual tasks and services. Use only relationships supported by available source or context. Omit overview when the evidence cannot support all three views.
 - The digest has ${fileCount} files and ${hunkCount} reviewable hunks. When there is a call tree, use it as the reading order for chapters and stops. Start with the trigger and unchanged caller in prose, then show the first changed callee. At each stop name the caller, explain what changes at this point and why, and hand the reader to the next call. Follow each significant branch to its observable outcome, including retries or failures that change behavior. When returning to a fork, name that fork. Describe asynchronous branches as independent when their execution order can vary. Group adjacent calls covered by one diff hunk into one stop and link their call nodes to that stopId. Use related changed callers, task registrations, tests or configuration as anchors when they demonstrate a transition. Keep the core execution path in the walkthrough itself.
 - Digest hunk ids are compact request-local aliases like h1 and h2. Return those aliases exactly; Codiff maps them back to stable live-diff ids.

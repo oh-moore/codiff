@@ -5,6 +5,7 @@ import { ReadOnlyMarkdownView } from '../ReadOnlyMarkdownView.tsx';
 const views = {
   calls: 'Call tree',
   flow: 'Component flow',
+  risks: 'Risks',
   sequence: 'Sequence diagram',
 } as const;
 type View = keyof typeof views;
@@ -75,7 +76,38 @@ export function SystemOverview({
         <h3>Call tree</h3>
         {renderCalls()}
       </div>
-      {view !== 'calls' && (
+      {view === 'risks' && (
+        <div>
+          <h3>Risks</h3>
+          {overview.risks?.length ? (
+            overview.risks.map((risk, i) => {
+              const index = stopIds.indexOf(risk.stopId ?? '');
+              return (
+                <article className="wt-call-card" key={i}>
+                  <strong>{risk.evidence}</strong>
+                  <p>{risk.scenario}</p>
+                  <p>
+                    <b>Check </b>
+                    {risk.verify}
+                  </p>
+                  {index >= 0 && (
+                    <button onClick={() => openStop(index)} type="button">
+                      Review change
+                    </button>
+                  )}
+                </article>
+              );
+            })
+          ) : (
+            <p>
+              {overview.risks
+                ? 'No specific risks identified in the reviewed changes.'
+                : 'This walkthrough has no risk review. Regenerate it to assess the change.'}
+            </p>
+          )}
+        </div>
+      )}
+      {(view === 'flow' || view === 'sequence') && (
         <ReadOnlyMarkdownView
           ariaLabel={views[view]}
           className="wt-overview-diagram"

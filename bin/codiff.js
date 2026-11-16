@@ -100,7 +100,8 @@ const buildWalkthroughGuide = () => {
     resolve(root, 'electron/narrative-walkthrough.cjs'),
   );
   const guide = readFileSync(resolve(root, 'bin/walkthrough-guide.md'), 'utf8').trimEnd();
-  return `${guide}\n\n\`\`\`json\n${JSON.stringify(narrativeWalkthroughSchema, null, 2)}\n\`\`\`\n`;
+  const risks = readFileSync(resolve(root, 'bin/risk-review.md'), 'utf8');
+  return `${guide}\n\n${risks}\n\n\`\`\`json\n${JSON.stringify(narrativeWalkthroughSchema, null, 2)}\n\`\`\`\n`;
 };
 
 const runCodiffUpdate = () => {

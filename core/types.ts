@@ -611,6 +611,7 @@ export type WalkthroughCall = {
 export type WalkthroughOverview = {
   calls: ReadonlyArray<WalkthroughCall>;
   flow: string;
+  risks?: ReadonlyArray<{ evidence: string; scenario: string; stopId?: string; verify: string }>;
   sequence: string;
 };
 
