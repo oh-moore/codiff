@@ -262,14 +262,17 @@ const storeResolvedRepositoryState = (webContentsId, state) => {
   if (browserWindow && !browserWindow.isDestroyed()) {
     browserWindow.setTitle(getRepositoryWindowTitle(state));
   }
+  const identity = getWindowIdentityForRepositoryState(state);
   const launchOptions = windowLaunchOptions.get(webContentsId);
   if (launchOptions) {
-    windowLaunchOptions.set(webContentsId, {
-      ...launchOptions,
-      source: state.source,
-    });
+    const nextOptions = { ...launchOptions, source: state.source };
+    if (windowIdentities.get(webContentsId)?.key !== identity?.key) {
+      delete nextOptions.walkthroughFile;
+      delete nextOptions.walkthroughResultFile;
+      delete nextOptions.walkthroughContext;
+    }
+    windowLaunchOptions.set(webContentsId, nextOptions);
   }
-  const identity = getWindowIdentityForRepositoryState(state);
   if (identity) {
     windowIdentities.set(webContentsId, identity);
   }
