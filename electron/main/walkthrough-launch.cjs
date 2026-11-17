@@ -14,6 +14,27 @@ const {
  * @typedef {import('../../core/types.ts').ReviewSource} ReviewSource
  */
 
+/** @param {any} input @param {RepositoryState} state */
+const needsFreshPullRequestWalkthrough = (input, state) => {
+  const saved = input?.source;
+  const live = state.source;
+  if (live?.type !== 'pull-request' || saved?.type !== 'pull-request' || saved.url !== live.url) {
+    return false;
+  }
+  if (saved.headSha && live.headSha && saved.headSha !== live.headSha) {
+    return true;
+  }
+  try {
+    assertWalkthroughHunkIdsResolve(input, state.files);
+    return false;
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Unresolved hunk ids:')) {
+      return true;
+    }
+    throw error;
+  }
+};
+
 /**
  * @param {{
  *   hasWindows: () => boolean;
@@ -86,6 +107,17 @@ const createWalkthroughLaunchController = ({
         }
 
         const state = await readRepositoryState(repositoryPath, launchOptions);
+        if (needsFreshPullRequestWalkthrough(input, state)) {
+          const freshOptions = { ...launchOptions, walkthrough: true };
+          delete freshOptions.walkthroughFile;
+          delete freshOptions.walkthroughResultFile;
+          openWindow(repositoryPath, freshOptions, Promise.resolve(state));
+          reportResult(
+            walkthroughResultFile,
+            'Saved walkthrough is stale. Opened a fresh walkthrough for the current pull request.',
+          );
+          return;
+        }
         assertWalkthroughHunkIdsResolve(input, state.files);
         const walkthrough = normalizeNarrativeWalkthrough(input, state.files, {
           branch: state.branch,
@@ -117,4 +149,4 @@ const createWalkthroughLaunchController = ({
   };
 };
 
-module.exports = { createWalkthroughLaunchController };
+module.exports = { createWalkthroughLaunchController, needsFreshPullRequestWalkthrough };

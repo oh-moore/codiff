@@ -201,3 +201,20 @@ test('switching sources or closing a window discards its initial walkthrough', a
   launch.controller.clear(1);
   expect(launch.controller.takeInitialWalkthrough(1)).toBeUndefined();
 });
+
+test('a newer head of the same PR opens a fresh walkthrough even if hunk IDs still exist', async () => {
+  await using launch = await createLaunch();
+  const source = {
+    type: 'pull-request' as const,
+    url: 'https://github.com/example/repo/pull/1',
+    headSha: 'old',
+  };
+  await writeFile(launch.walkthroughFile, JSON.stringify({ ...launch.input, source }));
+  launch.state.source = { ...source, headSha: 'new' };
+  await launch.open();
+  expect(launch.openWindow.mock.calls[0][1]).toEqual({
+    repositoryPathProvided: true,
+    walkthrough: true,
+  });
+  expect(launch.controller.takeInitialWalkthrough(1)).toBeUndefined();
+});

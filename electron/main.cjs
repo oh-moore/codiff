@@ -84,7 +84,10 @@ const { createSkillInstaller } = require('./main/agent-skill.cjs');
 const { createEditorOpener } = require('./main/editor.cjs');
 const { createDefinitionSearchCoordinator } = require('./definition-search.cjs');
 const { createTerminalHelper } = require('./main/terminal-helper.cjs');
-const { createWalkthroughLaunchController } = require('./main/walkthrough-launch.cjs');
+const {
+  createWalkthroughLaunchController,
+  needsFreshPullRequestWalkthrough,
+} = require('./main/walkthrough-launch.cjs');
 const { createWindowRevealController } = require('./window-reveal.cjs');
 const {
   MIN_WINDOW_HEIGHT,
@@ -1783,33 +1786,38 @@ ipcMain.handle('codiff:getNarrativeWalkthrough', async (event, source, options) 
         };
       }
 
-      try {
-        assertWalkthroughHunkIdsResolve(input, state.files);
-        return {
-          status: 'ready',
-          walkthrough: normalizeNarrativeWalkthrough(input, state.files, {
-            agent: agent.id,
-            branch: state.branch,
-            context: sessionContext,
-            generatedAt: state.generatedAt,
-            root: state.root,
-            source: state.source,
-          }),
-        };
-      } catch (error) {
-        const detail = error instanceof Error ? error.message : String(error);
-        // The usual cause of an unanchored working-tree walkthrough is that the
-        // changes were committed (or reverted) after it was authored. Surface a
-        // specific explanation when we can determine one.
-        const diagnosis = await diagnoseWalkthroughMismatch({
-          hasFiles: state.files.length > 0,
-          input,
-          repositoryRoot: state.root,
-        }).catch(() => null);
-        return {
-          reason: diagnosis || `Walkthrough file could not be applied to this diff: ${detail}`,
-          status: 'unavailable',
-        };
+      if (needsFreshPullRequestWalkthrough(input, state)) {
+        delete launchOptions.walkthroughFile;
+        delete launchOptions.walkthroughResultFile;
+      } else {
+        try {
+          assertWalkthroughHunkIdsResolve(input, state.files);
+          return {
+            status: 'ready',
+            walkthrough: normalizeNarrativeWalkthrough(input, state.files, {
+              agent: agent.id,
+              branch: state.branch,
+              context: sessionContext,
+              generatedAt: state.generatedAt,
+              root: state.root,
+              source: state.source,
+            }),
+          };
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : String(error);
+          // The usual cause of an unanchored working-tree walkthrough is that the
+          // changes were committed (or reverted) after it was authored. Surface a
+          // specific explanation when we can determine one.
+          const diagnosis = await diagnoseWalkthroughMismatch({
+            hasFiles: state.files.length > 0,
+            input,
+            repositoryRoot: state.root,
+          }).catch(() => null);
+          return {
+            reason: diagnosis || `Walkthrough file could not be applied to this diff: ${detail}`,
+            status: 'unavailable',
+          };
+        }
       }
     }
 
