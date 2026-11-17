@@ -192,7 +192,7 @@ const narrativeWalkthroughGenerationSchema = {
     title: narrativeWalkthroughSchema.properties.title,
     version: narrativeWalkthroughSchema.properties.version,
   },
-  required: ['version', 'kind', 'title', 'focus', 'chapters'],
+  required: ['version', 'kind', 'title', 'focus', 'chapters', 'overview'],
   type: 'object',
 };
 

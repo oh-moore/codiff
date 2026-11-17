@@ -107,6 +107,7 @@ const files = [
 
 test('reports only the long-running walkthrough generation phases', async () => {
   const phases: Array<string> = [];
+  let attempts = 0;
   let runOptions: any;
   let runSchema: any;
   const state = {
@@ -129,10 +130,26 @@ test('reports only the long-running walkthrough generation phases', async () => 
       _timeoutMessage: string,
       options: unknown,
     ) => {
+      attempts += 1;
       runOptions = options;
       runSchema = schema;
       return JSON.stringify({
         ...baseInput(),
+        overview:
+          attempts === 1
+            ? null
+            : {
+                calls: [
+                  {
+                    id: 'start',
+                    file: 'src/App.tsx',
+                    symbol: 'App',
+                    explanation: 'Starts review.',
+                  },
+                ],
+                flow: 'flowchart TD\nA-->B',
+                sequence: 'sequenceDiagram\nA->>B: Start',
+              },
         chapters: [
           {
             ...baseInput().chapters[0],
@@ -181,6 +198,8 @@ test('reports only the long-running walkthrough generation phases', async () => 
     },
   });
 
+  expect(attempts).toBe(2);
+  expect(runSchema.properties.overview.type).toBe('object');
   expect(phases).toEqual(['agent-generation', 'response-received']);
   expect(runOptions.reasoningEffort).toBeUndefined();
   expect(runOptions.timeoutMs).toBe(90_000);

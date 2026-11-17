@@ -103,7 +103,11 @@ const {
   readNarrativeWalkthrough,
   resolveNarrativeWalkthroughModel,
 } = require('./narrative-walkthrough.cjs');
-const { readStoredWalkthrough, writeStoredWalkthrough } = require('./walkthrough-store.cjs');
+const {
+  readPreviousPullRequestWalkthrough,
+  readStoredWalkthrough,
+  writeStoredWalkthrough,
+} = require('./walkthrough-store.cjs');
 const { uploadSharedSnapshot } = require('./shared-walkthrough-upload.cjs');
 const {
   resolvePlanShareTarget,
@@ -1742,6 +1746,9 @@ ipcMain.handle('codiff:getNarrativeWalkthrough', async (event, source, options) 
       source,
     );
     if (initialWalkthrough) {
+      if (initialWalkthrough.overview && initialWalkthrough.source.type === 'pull-request') {
+        writeStoredWalkthrough('authored:' + initialWalkthrough.source.url, initialWalkthrough);
+      }
       const sessionContext = await Promise.resolve(
         agent.readSessionContext(launchOptions?.[agent.sessionLaunchOptionKey]),
       ).catch(() => null);
@@ -1843,7 +1850,7 @@ ipcMain.handle('codiff:getNarrativeWalkthrough', async (event, source, options) 
     );
     if (!options?.force) {
       const cachedWalkthrough = readStoredWalkthrough(cacheKey);
-      if (cachedWalkthrough) {
+      if (cachedWalkthrough?.overview) {
         return {
           status: 'ready',
           walkthrough: {
@@ -1876,7 +1883,9 @@ ipcMain.handle('codiff:getNarrativeWalkthrough', async (event, source, options) 
       },
       walkthroughContext,
       walkthroughPrompt,
-      options?.previousWalkthrough,
+      options?.previousWalkthrough?.overview
+        ? options.previousWalkthrough
+        : readPreviousPullRequestWalkthrough(state.source) || options?.previousWalkthrough,
     );
     if (result.status === 'ready') {
       const generatedCacheKey = getNarrativeWalkthroughCacheKey(

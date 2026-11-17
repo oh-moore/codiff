@@ -5,6 +5,7 @@ const {
   existsSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   renameSync,
   rmSync,
   statSync,
@@ -108,6 +109,35 @@ const readStoredWalkthrough = (cacheKey) => {
   }
 };
 
+/** @param {import('../core/types.ts').ReviewSource} source */
+const readPreviousPullRequestWalkthrough = (source) => {
+  if (source?.type !== 'pull-request' || !source.url) return null;
+  const directory = getWalkthroughStoreDir();
+  if (!existsSync(directory)) return null;
+  let latest = null;
+  let latestTime = 0;
+  for (const entry of readdirSync(directory)) {
+    if (!entry.endsWith('.json')) continue;
+    try {
+      const path = join(directory, entry);
+      const stat = statSync(path);
+      if (stat.mtimeMs <= latestTime || stat.size > MAX_STORED_WALKTHROUGH_BYTES) continue;
+      const { walkthrough } = JSON.parse(readFileSync(path, 'utf8'));
+      if (
+        walkthrough?.source?.url === source.url &&
+        walkthrough.overview &&
+        isNarrativeWalkthrough(walkthrough)
+      ) {
+        latest = walkthrough;
+        latestTime = stat.mtimeMs;
+      }
+    } catch {
+      // Ignore records removed or replaced while the cache is being read.
+    }
+  }
+  return latest;
+};
+
 /**
  * @param {string} cacheKey
  * @param {import('../core/types.ts').NarrativeWalkthrough} walkthrough
@@ -143,6 +173,7 @@ const writeStoredWalkthrough = (cacheKey, walkthrough) => {
 
 module.exports = {
   getWalkthroughStorePath,
+  readPreviousPullRequestWalkthrough,
   readStoredWalkthrough,
   writeStoredWalkthrough,
 };

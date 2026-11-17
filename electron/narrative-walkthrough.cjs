@@ -810,6 +810,7 @@ const buildPreviousWalkthroughInput = (previousWalkthrough) => {
       : undefined;
   const summary = {
     chapters,
+    overview: normalizeOverview(walkthrough.overview),
     ...(commit?.body || commit?.title ? { commit } : {}),
     focus: oneLine(walkthrough.focus),
     title: oneLine(walkthrough.title),
@@ -818,7 +819,7 @@ const buildPreviousWalkthroughInput = (previousWalkthrough) => {
   return `Previous walkthrough to update:
 ${JSON.stringify(summary)}
 
-Re-author it for the current digest. Keep stops that are still accurate, revise changed explanations, add new review ideas, and remove ideas whose code is gone. Re-anchor every stop to the current digest's hunk aliases; never reuse ids or anchors from the previous walkthrough. Return the complete updated walkthrough.
+Carry forward the reviewed call paths, diagrams and risks where the current change still supports them. Update changed behavior and remap overview links to the new stops. Re-author it for the current digest. Keep stops that are still accurate, revise changed explanations, add new review ideas, and remove ideas whose code is gone. Re-anchor every stop to the current digest's hunk aliases; never reuse ids or anchors from the previous walkthrough. Return the complete updated walkthrough.
 `;
 };
 
@@ -896,7 +897,7 @@ const buildWalkthroughSizingGuidance = (state) => {
   return `${riskReview}
 
 Coverage contract:
-- For behavioral changes include overview with three views covering the independently triggered paths changed by this review. Cross-check each chapter against the overview: give every evidenced entry point its own root call with no parent, including admin or API writes and independently scheduled consumers. Follow each path as far as the evidence allows. If a hunk is truncated, keep the known entry point and stop at the last supported edge. Show shared persistent state between paths in the diagrams. Give each node an id, repository-relative file, qualified Class.method or function symbol, and explanation of what changed or why the caller matters. Use parent to reference an earlier caller, snippet for a short exact source excerpt, and stopId to jump to the matching chapter stop. Label signals, callbacks, queues and network boundaries explicitly. In flow provide raw Mermaid flowchart source showing components and their relationships. In sequence provide raw Mermaid sequenceDiagram source using one statement per line and commas instead of literal semicolons in message and note text, showing messages in time order, including asynchronous and concurrent work where evidenced. Name the actual tasks and services. Use only relationships supported by available source or context. Omit overview when the evidence cannot support all three views.
+- Include overview with three views covering the independently triggered paths changed by this review. Cross-check each chapter against the overview: give every evidenced entry point its own root call with no parent, including admin or API writes and independently scheduled consumers. Follow each path as far as the evidence allows. If a hunk is truncated, keep the known entry point and stop at the last supported edge. Show shared persistent state between paths in the diagrams. Give each node an id, repository-relative file, qualified Class.method or function symbol, and explanation of what changed or why the caller matters. Use parent to reference an earlier caller, snippet for a short exact source excerpt, and stopId to jump to the matching chapter stop. Label signals, callbacks, queues and network boundaries explicitly. In flow provide raw Mermaid flowchart source showing components and their relationships. In sequence provide raw Mermaid sequenceDiagram source using one statement per line and commas instead of literal semicolons in message and note text, showing messages in time order, including asynchronous and concurrent work where evidenced. Name the actual tasks and services. Use only relationships supported by available source or context. For partial evidence, show the supported portion and label the boundary. For non-runtime changes, use the affected artifacts and the review sequence. Use at most 32 unique call IDs in parent-before-child order.
 - The digest has ${fileCount} files and ${hunkCount} reviewable hunks. When there is a call tree, use it as the reading order for chapters and stops. Start with the trigger and unchanged caller in prose, then show the first changed callee. At each stop name the caller, explain what changes at this point and why, and hand the reader to the next call. Follow each significant branch to its observable outcome, including retries or failures that change behavior. When returning to a fork, name that fork. Describe asynchronous branches as independent when their execution order can vary. Group adjacent calls covered by one diff hunk into one stop and link their call nodes to that stopId. Use related changed callers, task registrations, tests or configuration as anchors when they demonstrate a transition. Keep the core execution path in the walkthrough itself.
 - Digest hunk ids are compact request-local aliases like h1 and h2. Return those aliases exactly; Codiff maps them back to stable live-diff ids.
 - Every patch hunk contains its own bounded patch excerpt. Use that excerpt to associate each alias with its exact change; an excerpt ending in … is truncated.
@@ -1025,19 +1026,31 @@ const readNarrativeWalkthrough = async (
       previousWalkthrough,
     );
     agentOptions?.onProgress?.('agent-generation');
-    const response = await agent.run(
-      state.root,
-      prompt,
-      narrativeWalkthroughResponseSchema,
-      'walkthrough.json',
-      `${agent.label} walkthrough timed out after ${Math.ceil(timeoutMs / 1_000)} seconds while processing ${fileCount} files and ${hunkCount} reviewable hunks.`,
-      {
-        ...agentOptions,
-        timeoutMs,
-      },
-    );
+    const generate = (requestPrompt) =>
+      agent.run(
+        state.root,
+        requestPrompt,
+        narrativeWalkthroughResponseSchema,
+        'walkthrough.json',
+        `${agent.label} walkthrough timed out after ${Math.ceil(timeoutMs / 1_000)} seconds while processing ${fileCount} files and ${hunkCount} reviewable hunks.`,
+        {
+          ...agentOptions,
+          timeoutMs,
+        },
+      );
+    let parsed = parseJSONMessage(await generate(prompt));
+    if (!normalizeOverview(parsed?.overview)) {
+      parsed = parseJSONMessage(
+        await generate(
+          prompt +
+            '\nThe previous response omitted a valid system overview. Include overview.calls with unique ids and earlier parents, overview.flow starting with flowchart and overview.sequence starting with sequenceDiagram. Use raw multiline Mermaid without fences.',
+        ),
+      );
+      if (!normalizeOverview(parsed?.overview)) {
+        throw new Error('The agent could not generate a valid system overview after two attempts.');
+      }
+    }
     agentOptions?.onProgress?.('response-received');
-    const parsed = parseJSONMessage(response);
     const walkthrough = normalizeNarrativeWalkthrough(
       parsed,
       state.files,
